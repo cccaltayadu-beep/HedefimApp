@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { fetchYokAtlasSuggestions } from "./services/yokAtlasClient.js";
+import React, { useEffect, useState } from "react";
+import { fetchYokAtlasSuggestions } from "./services/heuristicYokAtlasClient.js";
 
 function App() {
   const [form, setForm] = useState({
@@ -11,8 +11,49 @@ function App() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [baseResults, setBaseResults] = useState([]);
   const [results, setResults] = useState([]);
   const [error, setError] = useState(null);
+
+  const [filters, setFilters] = useState({
+    duration: "all",
+    universityType: "all",
+    scholarship: "all",
+    city: "all",
+    university: "all",
+    minScore: "",
+    maxScore: "",
+    minRank: "",
+    maxRank: ""
+  });
+
+  const applyFilters = (items, f) => {
+    return items.filter((item) => {
+      if (f.duration !== "all" && item.duration !== f.duration) return false;
+      if (f.universityType !== "all" && item.universityType !== f.universityType)
+        return false;
+      if (f.scholarship !== "all" && item.scholarship !== f.scholarship)
+        return false;
+      if (f.city !== "all" && item.city !== f.city) return false;
+      if (f.university !== "all" && item.university !== f.university)
+        return false;
+
+      const score = item.lastMinScore;
+      if (f.minScore && score < Number(f.minScore)) return false;
+      if (f.maxScore && score > Number(f.maxScore)) return false;
+
+      const rank = item.estimatedRank;
+      if (f.minRank && rank && rank < Number(f.minRank)) return false;
+      if (f.maxRank && rank && rank > Number(f.maxRank)) return false;
+
+      return true;
+    });
+  };
+
+  useEffect(() => {
+    if (baseResults.length === 0) return;
+    setResults(applyFilters(baseResults, filters));
+  }, [baseResults, filters]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,13 +66,26 @@ function App() {
     setLoading(true);
     try {
       const data = await fetchYokAtlasSuggestions(form);
-      setResults(data);
+      setBaseResults(data);
+      setResults(applyFilters(data, filters));
     } catch (err) {
       setError("Şu anda önerileri getirirken bir sorun oluştu.");
     } finally {
       setLoading(false);
     }
   };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const uniqueCities = Array.from(
+    new Set(baseResults.map((r) => r.city))
+  ).sort();
+  const uniqueUniversities = Array.from(
+    new Set(baseResults.map((r) => r.university))
+  ).sort();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-dark via-brand-navy to-black">
@@ -230,6 +284,142 @@ function App() {
                 </button>
               </form>
 
+              {/* Advanced filter panel */}
+              <div className="space-y-3 rounded-2xl border border-sky-500/20 bg-slate-950/80 p-3">
+                <div className="flex items-center justify-between text-[11px] text-slate-300">
+                  <span>Gelişmiş Filtreler</span>
+                  <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-medium text-sky-200">
+                    Anlık güncellenen sonuçlar
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-[11px] text-slate-200">
+                  <div className="space-y-1.5">
+                    <label className="font-medium">Program Süresi</label>
+                    <select
+                      name="duration"
+                      value={filters.duration}
+                      onChange={handleFilterChange}
+                      className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
+                    >
+                      <option value="all">Tümü</option>
+                      <option value="4">4 Yıllık (Fakülte)</option>
+                      <option value="2">2 Yıllık (MYO)</option>
+                      <option value="6">6 Yıllık (Tıp vb.)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-medium">Üniversite Türü</label>
+                    <select
+                      name="universityType"
+                      value={filters.universityType}
+                      onChange={handleFilterChange}
+                      className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
+                    >
+                      <option value="all">Tümü</option>
+                      <option value="devlet">Devlet</option>
+                      <option value="vakif">Vakıf (Özel)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-medium">Burs / Ücret</label>
+                    <select
+                      name="scholarship"
+                      value={filters.scholarship}
+                      onChange={handleFilterChange}
+                      className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
+                    >
+                      <option value="all">Tümü</option>
+                      <option value="ucretsiz">Ücretsiz</option>
+                      <option value="burslu">Tam Burslu</option>
+                      <option value="indirim75">%75 İndirimli</option>
+                      <option value="indirim50">%50 İndirimli</option>
+                      <option value="ucretli">Ücretli</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-medium">Şehir</label>
+                    <select
+                      name="city"
+                      value={filters.city}
+                      onChange={handleFilterChange}
+                      className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
+                    >
+                      <option value="all">Tüm İller</option>
+                      {uniqueCities.map((city) => (
+                        <option key={city} value={city}>
+                          {city}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-medium">Üniversite</label>
+                    <select
+                      name="university"
+                      value={filters.university}
+                      onChange={handleFilterChange}
+                      className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
+                    >
+                      <option value="all">Tüm Üniversiteler</option>
+                      {uniqueUniversities.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-medium">Puan Aralığı</label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <input
+                        type="number"
+                        name="minScore"
+                        value={filters.minScore}
+                        onChange={handleFilterChange}
+                        placeholder="En az"
+                        className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 placeholder:text-slate-500 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
+                      />
+                      <input
+                        type="number"
+                        name="maxScore"
+                        value={filters.maxScore}
+                        onChange={handleFilterChange}
+                        placeholder="En çok"
+                        className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 placeholder:text-slate-500 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-medium">Başarı Sırası</label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <input
+                        type="number"
+                        name="minRank"
+                        value={filters.minRank}
+                        onChange={handleFilterChange}
+                        placeholder="En iyi"
+                        className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 placeholder:text-slate-500 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
+                      />
+                      <input
+                        type="number"
+                        name="maxRank"
+                        value={filters.maxRank}
+                        onChange={handleFilterChange}
+                        placeholder="En kötü"
+                        className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 placeholder:text-slate-500 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-3 rounded-2xl border border-white/5 bg-slate-900/60 p-3">
                 <div className="flex items-center justify-between text-[11px] text-slate-400">
                   <span>Önizleme Çıktısı</span>
@@ -263,6 +453,26 @@ function App() {
                           <p className="text-[11px] text-slate-300">
                             {item.program} • {item.city}
                           </p>
+                          <p className="mt-1 text-[10px] text-slate-400">
+                            {item.duration === "2"
+                              ? "2 Yıllık (MYO)"
+                              : item.duration === "6"
+                              ? "6 Yıllık (Tıp vb.)"
+                              : "4 Yıllık (Fakülte)"}{" "}
+                            •{" "}
+                            {item.universityType === "vakif"
+                              ? "Vakıf Üniversitesi"
+                              : "Devlet Üniversitesi"}{" "}
+                            • {item.scholarship === "ucretsiz"
+                              ? "Ücretsiz"
+                              : item.scholarship === "burslu"
+                              ? "Tam Burslu"
+                              : item.scholarship === "indirim75"
+                              ? "%75 İndirimli"
+                              : item.scholarship === "indirim50"
+                              ? "%50 İndirimli"
+                              : "Ücretli"}
+                          </p>
                         </div>
                         <div className="text-right text-[11px] text-slate-300">
                           <span className="inline-flex items-center justify-end gap-1">
@@ -276,6 +486,14 @@ function App() {
                           <p className="text-[10px] text-slate-500">
                             Son yerleşen min. puan
                           </p>
+                          {item.estimatedRank && (
+                            <p className="mt-0.5 text-[10px] text-slate-500">
+                              Tahmini başarı sırası:{" "}
+                              <span className="text-slate-200">
+                                {item.estimatedRank.toLocaleString("tr-TR")}
+                              </span>
+                            </p>
+                          )}
                         </div>
                       </li>
                     ))}
@@ -329,17 +547,24 @@ function App() {
 
       {/* Footer */}
       <footer className="border-t border-white/5 bg-brand-dark/70">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-5 text-xs text-slate-500 sm:flex-row lg:px-6">
-          <p>© {new Date().getFullYear()} Hedefim. Tüm hakları saklıdır.</p>
-          <div className="flex flex-wrap items-center gap-4">
-            <span>Kurucu: İbrahim</span>
-            <span className="h-3 w-px bg-slate-700" />
-            <button className="text-slate-400 transition hover:text-slate-200">
-              Gizlilik
-            </button>
-            <button className="text-slate-400 transition hover:text-slate-200">
-              İletişim
-            </button>
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-5 text-xs text-slate-500 lg:px-6">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <p>© {new Date().getFullYear()} Hedefim. Tüm hakları saklıdır.</p>
+            <div className="flex flex-wrap items-center gap-4">
+              <span>Kurucu: İbrahim</span>
+              <span className="h-3 w-px bg-slate-700" />
+              <button className="text-slate-400 transition hover:text-slate-200">
+                Gizlilik
+              </button>
+              <button className="text-slate-400 transition hover:text-slate-200">
+                İletişim
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center justify-center">
+            <span className="rounded-full border border-sky-500/40 bg-gradient-to-r from-brand-navy via-sky-900 to-brand-navy px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-100 shadow-lg shadow-sky-900/40">
+              Learning DNA EdTech
+            </span>
           </div>
         </div>
       </footer>

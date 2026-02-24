@@ -59,10 +59,6 @@ function App() {
             <button className="transition hover:text-white">Bilimsel Altyapı</button>
             <button className="transition hover:text-white">Hakkında</button>
           </nav>
-
-          <button className="hidden rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-wide text-slate-100 shadow-sm shadow-slate-900/40 backdrop-blur md:inline-flex hover:bg-white/10">
-            Giriş / Kayıt
-          </button>
         </div>
       </header>
 
@@ -316,12 +312,16 @@ function App() {
           </div>
           <div className="space-y-2">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">
-              Uzun Vadeli Vizyon
+              Hakkında
             </h3>
             <p className="text-xs text-slate-400">
-              Hedefim, yalnızca yerleşmeye değil, mezuniyet sonrası akademik ve
-              profesyonel başarıya odaklanan bir tercih rehberi olarak
-              tasarlandı.
+              Hedefim,{" "}
+              <span className="font-semibold text-slate-200">
+                Learning DNA EdTech
+              </span>{" "}
+              tarafından geliştirilen, yalnızca yerleşmeye değil, mezuniyet
+              sonrası akademik ve profesyonel başarıya odaklanan bir tercih
+              rehberidir.
             </p>
           </div>
         </div>

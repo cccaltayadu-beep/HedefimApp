@@ -26,10 +26,38 @@ Geliştirme sunucusu varsayılan olarak `http://localhost:5173` adresinde açıl
 
 Gerçek veriye geçmek için:
 
-1. `src/services/yokAtlasClient.js` dosyasını açın.
-2. `fetchYokAtlasSuggestions` fonksiyonu içinde:
-   - Gerekli API isteklerini (REST, proxy sunucu vb.) ekleyin.
-   - Geri dönen veriyi, halihazırda kullanılan formatta (`university`, `program`, `city`, `scoreType`, `lastMinScore`) dönüştürün.
+1. Backend tarafında YÖK Atlas veya kendi veri tabanınıza erişen bir endpoint tanımlayın. Önerilen sözleşme:
+   - URL: `POST /api/yok-atlas/suggestions`
+   - Body:
+     ```json
+     {
+       "year": "2025",
+       "scores": {
+         "tyt": 420.75,
+         "say": 430.12,
+         "ea": 395.6,
+         "soz": 380.2
+       }
+     }
+     ```
+   - Cevap:
+     ```json
+     [
+       {
+         "id": "boun-ceng",
+         "university": "Boğaziçi Üniversitesi",
+         "program": "Bilgisayar Mühendisliği",
+         "city": "İstanbul",
+         "scoreType": "SAY",
+         "lastMinScore": 560.42
+       }
+     ]
+     ```
+2. Frontend `.env` dosyanızda backend adresini tanımlayın:
+   ```bash
+   VITE_YOK_ATLAS_API_URL=https://your-backend-domain.com/api/yok-atlas
+   ```
+3. `src/services/yokAtlasClient.js` içindeki `fetchYokAtlasSuggestions` fonksiyonu bu endpoint’e `POST` isteği atar, gelen veriyi normalize eder ve arayüze uygun forma çevirir.
 
-Arayüz ve mimari, gerçek zamanlı veri çekmeye hazır olacak şekilde tasarlanmıştır.
+Arayüz ve mimari, bu endpoint gerçek YÖK Atlas verisiyle beslendiğinde ekstra değişiklik olmadan çalışacak şekilde tasarlanmıştır.
 

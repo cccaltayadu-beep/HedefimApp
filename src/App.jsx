@@ -1,6 +1,178 @@
 import React, { useEffect, useState } from "react";
 import { fetchYokAtlasSuggestions } from "./services/heuristicYokAtlasClient.js";
 
+const ALL_CITIES = [
+  "Adana",
+  "Adıyaman",
+  "Afyonkarahisar",
+  "Ağrı",
+  "Amasya",
+  "Ankara",
+  "Antalya",
+  "Artvin",
+  "Aydın",
+  "Balıkesir",
+  "Bilecik",
+  "Bingöl",
+  "Bitlis",
+  "Bolu",
+  "Burdur",
+  "Bursa",
+  "Çanakkale",
+  "Çankırı",
+  "Çorum",
+  "Denizli",
+  "Diyarbakır",
+  "Edirne",
+  "Elazığ",
+  "Erzincan",
+  "Erzurum",
+  "Eskişehir",
+  "Gaziantep",
+  "Giresun",
+  "Gümüşhane",
+  "Hakkari",
+  "Hatay",
+  "Isparta",
+  "Mersin",
+  "İstanbul",
+  "İzmir",
+  "Kars",
+  "Kastamonu",
+  "Kayseri",
+  "Kırklareli",
+  "Kırşehir",
+  "Kocaeli",
+  "Konya",
+  "Kütahya",
+  "Malatya",
+  "Manisa",
+  "Kahramanmaraş",
+  "Mardin",
+  "Muğla",
+  "Muş",
+  "Nevşehir",
+  "Niğde",
+  "Ordu",
+  "Rize",
+  "Sakarya",
+  "Samsun",
+  "Siirt",
+  "Sinop",
+  "Sivas",
+  "Tekirdağ",
+  "Tokat",
+  "Trabzon",
+  "Tunceli",
+  "Şanlıurfa",
+  "Uşak",
+  "Van",
+  "Yozgat",
+  "Zonguldak",
+  "Aksaray",
+  "Bayburt",
+  "Karaman",
+  "Kırıkkale",
+  "Batman",
+  "Şırnak",
+  "Bartın",
+  "Ardahan",
+  "Iğdır",
+  "Yalova",
+  "Karabük",
+  "Kilis",
+  "Osmaniye",
+  "Düzce"
+];
+
+const ALL_UNIVERSITIES = [
+  "Boğaziçi Üniversitesi",
+  "Orta Doğu Teknik Üniversitesi",
+  "İstanbul Teknik Üniversitesi",
+  "İstanbul Üniversitesi",
+  "İstanbul Üniversitesi-Cerrahpaşa",
+  "Marmara Üniversitesi",
+  "Yıldız Teknik Üniversitesi",
+  "Galatasaray Üniversitesi",
+  "Mimar Sinan Güzel Sanatlar Üniversitesi",
+  "Hacettepe Üniversitesi",
+  "Ankara Üniversitesi",
+  "Gazi Üniversitesi",
+  "Yıldırım Beyazıt Üniversitesi",
+  "Ege Üniversitesi",
+  "Dokuz Eylül Üniversitesi",
+  "Akdeniz Üniversitesi",
+  "Çukurova Üniversitesi",
+  "Uludağ Üniversitesi",
+  "Sakarya Üniversitesi",
+  "Kocaeli Üniversitesi",
+  "Selçuk Üniversitesi",
+  "Erciyes Üniversitesi",
+  "Fırat Üniversitesi",
+  "Atatürk Üniversitesi",
+  "Ondokuz Mayıs Üniversitesi",
+  "Karadeniz Teknik Üniversitesi",
+  "Pamukkale Üniversitesi",
+  "Eskişehir Osmangazi Üniversitesi",
+  "Anadolu Üniversitesi",
+  "Trakya Üniversitesi",
+  "Çanakkale Onsekiz Mart Üniversitesi",
+  "Adnan Menderes Üniversitesi",
+  "Muğla Sıtkı Koçman Üniversitesi",
+  "İnönü Üniversitesi",
+  "Süleyman Demirel Üniversitesi",
+  "Kahramanmaraş Sütçü İmam Üniversitesi",
+  "Dicle Üniversitesi",
+  "Gaziantep Üniversitesi",
+  "Mersin Üniversitesi",
+  "Kırıkkale Üniversitesi",
+  "Niğde Ömer Halisdemir Üniversitesi",
+  "Manisa Celal Bayar Üniversitesi",
+  "Kastamonu Üniversitesi",
+  "Aksaray Üniversitesi",
+  "Uşak Üniversitesi",
+  "Afyon Kocatepe Üniversitesi",
+  "Balıkesir Üniversitesi",
+  "Kırklareli Üniversitesi",
+  "Bolu Abant İzzet Baysal Üniversitesi",
+  "Karabük Üniversitesi",
+  "Yalova Üniversitesi",
+  "Bartın Üniversitesi",
+  "Osmaniye Korkut Ata Üniversitesi",
+  "İzmir Katip Çelebi Üniversitesi",
+  "İzmir Demokrasi Üniversitesi",
+  "İstanbul Medeniyet Üniversitesi",
+  "İstanbul Üniversitesi-Cerrahpaşa",
+  "İstanbul Teknik Üniversitesi Kuzey Kıbrıs",
+  "Yeditepe Üniversitesi",
+  "Sabancı Üniversitesi",
+  "Koç Üniversitesi",
+  "İstanbul Bilgi Üniversitesi",
+  "İstanbul Kültür Üniversitesi",
+  "Bahçeşehir Üniversitesi",
+  "Beykent Üniversitesi",
+  "Işık Üniversitesi",
+  "İstanbul Ticaret Üniversitesi",
+  "İstanbul Şehir Üniversitesi",
+  "Maltepe Üniversitesi",
+  "Üsküdar Üniversitesi",
+  "Acıbadem Mehmet Ali Aydınlar Üniversitesi",
+  "Bezmialem Vakıf Üniversitesi",
+  "İstinye Üniversitesi",
+  "Medipol Üniversitesi",
+  "Özyeğin Üniversitesi",
+  "TOBB Ekonomi ve Teknoloji Üniversitesi",
+  "Atılım Üniversitesi",
+  "Çankaya Üniversitesi",
+  "Başkent Üniversitesi",
+  "Ted Üniversitesi",
+  "Bilkent Üniversitesi",
+  "İzmir Ekonomi Üniversitesi",
+  "Yaşar Üniversitesi",
+  "Dokuz Eylül Üniversitesi",
+  "Başka Bir Vakıf Üniversitesi"
+];
+
 function App() {
   const [form, setForm] = useState({
     year: "2025",
@@ -79,13 +251,6 @@ function App() {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
-
-  const uniqueCities = Array.from(
-    new Set(baseResults.map((r) => r.city))
-  ).sort();
-  const uniqueUniversities = Array.from(
-    new Set(baseResults.map((r) => r.university))
-  ).sort();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-dark via-brand-navy to-black">
@@ -349,7 +514,7 @@ function App() {
                       className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
                     >
                       <option value="all">Tüm İller</option>
-                      {uniqueCities.map((city) => (
+                      {ALL_CITIES.map((city) => (
                         <option key={city} value={city}>
                           {city}
                         </option>
@@ -366,7 +531,7 @@ function App() {
                       className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-2 py-1.5 text-[11px] text-slate-100 outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/60"
                     >
                       <option value="all">Tüm Üniversiteler</option>
-                      {uniqueUniversities.map((u) => (
+                      {ALL_UNIVERSITIES.map((u) => (
                         <option key={u} value={u}>
                           {u}
                         </option>

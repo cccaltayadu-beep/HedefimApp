@@ -165,15 +165,23 @@ function recommendForScore(scoreType, rawScore) {
   const pool = PROGRAM_CATALOG[scoreType];
   const BAND = 35;
 
+  // Önce kullanıcı puanından daha yüksek taban puanlı programları eleyelim.
   let candidates = pool.filter(
-    (p) => Math.abs(p.baseMinScore - score) <= BAND
+    (p) =>
+      p.baseMinScore <= score &&
+      Math.abs(p.baseMinScore - score) <= BAND
   );
 
   if (candidates.length === 0) {
-    candidates = [...pool].sort(
-      (a, b) =>
-        Math.abs(a.baseMinScore - score) - Math.abs(b.baseMinScore - score)
-    );
+    // Eğer bant içinde ve kullanıcıdan düşük/eşit taban puanlı program yoksa,
+    // yalnızca taban puanı kullanıcı puanına eşit veya altında olanları
+    // yakınlığa göre sırala.
+    candidates = pool
+      .filter((p) => p.baseMinScore <= score)
+      .sort(
+        (a, b) =>
+          Math.abs(a.baseMinScore - score) - Math.abs(b.baseMinScore - score)
+      );
   } else {
     candidates = candidates.sort(
       (a, b) =>
@@ -182,9 +190,10 @@ function recommendForScore(scoreType, rawScore) {
   }
 
   return candidates.slice(0, 5).map((p, idx) => {
-    const lastMinScore = Number(
-      (0.7 * p.baseMinScore + 0.3 * score).toFixed(2)
-    );
+    // lastMinScore hiçbir zaman kullanıcının puanından büyük olmayacak şekilde
+    // kısıtlanıyor (lastMinScore <= userScore garantisi).
+    const weighted = 0.7 * p.baseMinScore + 0.3 * score;
+    const lastMinScore = Number(Math.min(weighted, score).toFixed(2));
 
     return {
       id: `${scoreType}-${idx}-${p.university}-${p.program}`,
